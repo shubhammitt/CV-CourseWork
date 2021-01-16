@@ -1,9 +1,9 @@
 # Otsu's algorithm
 
 '''
-Asssumptions: 
+Asssumptions:
 1) Object will be present at the center of the image.
-2) Boundary pixels are likely to be the background. 
+2) Boundary pixels are likely to be the background.
 '''
 
 import cv2
@@ -41,11 +41,41 @@ def calculate_variance(frequency, start, end):
 		variance /= count
 	return (count, variance)
 
+def apply_assumtion1(grayImage, min_threshold):
+	'''
+	'''
+	rows, cols = grayImage.shape
+
+	center_x, center_y = rows // 2, cols // 2
+
+	l_box = int(0.2 * cols)
+	b_box = int(0.2 * rows)
+
+	x = center_x - b_box // 2
+	y = center_y - l_box // 2
+	count = 0
+	arr = []
+
+	for i in range(x, x + l_box):
+		for j in range(y, y + b_box):
+			arr.append(grayImage[i][j])
+			count += 1
+
+	arr.sort()
+	median_pixel = arr[count // 2]
+
+	if median_pixel <= min_threshold:
+		return "left"
+
+	return "right"
+
+
+
 def apply_assumption2(grayImage, min_threshold):
 	'''
-	Assumption: Boundary pixels are likely to be the background. 
+	Assumption: Boundary pixels are likely to be the background.
 	we will take frame of 10% on borders to be part of background
-	we will find mean of pixel in that frame decide accordinly on which side of min_threashold that lies
+	we will find median of pixel in that frame decide accordinly on which side of min_threashold that lies
 	'''
 	rows, cols = grayImage.shape
 
@@ -54,30 +84,32 @@ def apply_assumption2(grayImage, min_threshold):
 	up = int(0.1 * rows)
 	down = int(0.9 * rows)
 
-	sum_pixel = 0
 	count = 0
+	arr = []
 	for row in range(rows):
 		for col in range(cols):
 			pixel = grayImage[row][col]
 			if row <= up or row >= down or col <= left or col >= right:
 				count += 1
-				sum_pixel += pixel
+				arr.append(pixel)
 
+	arr.sort()
+	median_pixel = arr[count // 2]
 
-	if count != 0:
-		mean_pixel = sum_pixel / count
-
-	print(min_threshold, mean_pixel)
-	if mean_pixel <= min_threshold:
+	if median_pixel <= min_threshold:
 		return "left"
 
 	return "right"
 
 
-def extract_foreground(grayImage, originalImage, min_threshold):
+def extract_foreground(grayImage, originalImage, min_threshold, assumption):
 	rows, cols = grayImage.shape
 	print(rows, cols)
-	blue_side = apply_assumption2(grayImage, min_threshold)
+
+	if assumption == 2:
+		blue_side = apply_assumption2(grayImage, min_threshold)
+	else:
+		blue_side = apply_assumtion1(grayImage. min_threshold)
 
 	for row in range(rows):
 		for col in range(cols):
@@ -91,7 +123,7 @@ def extract_foreground(grayImage, originalImage, min_threshold):
 	cv2.destroyAllWindows()
 
 
-def otsu(originalImage):
+def otsu(originalImage, assumption):
 
 	grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
 	frequency = get_frequency_distribution(grayImage)
@@ -108,18 +140,19 @@ def otsu(originalImage):
 			min_variance = weighted_variance
 			min_threshold = i
 
-	extract_foreground(grayImage, originalImage, min_threshold)
+	extract_foreground(grayImage, originalImage, min_threshold, assumption)
 
 
 
 if __name__ == '__main__':
 
-	if len(sys.argv) != 2:
-		print("Usage: python3 <script_name.py> <path_of_image>")
+	if len(sys.argv) != 3:
+		print("Usage: python3 <script_name.py> <path_of_image> <assumption>")
 		exit(0)
 
 	image_name = sys.argv[1]
+	assumption = max(2, int(sys.argv[2]))
 
 	originalImage = cv2.imread(image_name) # original image is assumed to be colored
 
-	otsu(copy.deepcopy(originalImage))
+	otsu(copy.deepcopy(originalImage), assumption)
