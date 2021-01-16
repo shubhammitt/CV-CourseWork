@@ -10,6 +10,7 @@ import cv2
 import sys
 import copy
 
+
 def get_frequency_distribution(grayImage):
 	rows, cols = grayImage.shape
 
@@ -20,6 +21,7 @@ def get_frequency_distribution(grayImage):
 			frequency[grayImage[row][col]] += 1
 
 	return frequency
+
 
 def calculate_variance(frequency, start, end):
 	'''
@@ -39,26 +41,54 @@ def calculate_variance(frequency, start, end):
 		variance /= count
 	return (count, variance)
 
+def apply_assumption2(grayImage, min_threshold):
+	'''
+	Assumption: Boundary pixels are likely to be the background. 
+	we will take frame of 10% on borders to be part of background
+	we will find mean of pixel in that frame decide accordinly on which side of min_threashold that lies
+	'''
+	rows, cols = grayImage.shape
+
+	left = int(0.1 * cols)
+	right = int(0.9 * cols)
+	up = int(0.1 * rows)
+	down = int(0.9 * rows)
+
+	sum_pixel = 0
+	count = 0
+	for row in range(rows):
+		for col in range(cols):
+			pixel = grayImage[row][col]
+			if row <= up or row >= down or col <= left or col >= right:
+				count += 1
+				sum_pixel += pixel
+
+
+	if count != 0:
+		mean_pixel = sum_pixel / count
+
+	print(min_threshold, mean_pixel)
+	if mean_pixel <= min_threshold:
+		return "left"
+
+	return "right"
+
 
 def extract_foreground(grayImage, originalImage, min_threshold):
 	rows, cols = grayImage.shape
+	print(rows, cols)
+	blue_side = apply_assumption2(grayImage, min_threshold)
 
 	for row in range(rows):
 		for col in range(cols):
-			if grayImage[row][col] < min_threshold:
+			if (grayImage[row][col] < min_threshold and blue_side == "left") or (grayImage[row][col] >= min_threshold and blue_side == "right"):
 				originalImage[row][col][0] = 255 # blue
 				originalImage[row][col][1] = 0 # green
 				originalImage[row][col][2] = 0 # red
-			# print(originalImage[row][col])
-
 
 	cv2.imshow('gray', originalImage)
 	cv2.waitKey()
 	cv2.destroyAllWindows()
-
-
-
-
 
 
 def otsu(originalImage):
@@ -78,12 +108,7 @@ def otsu(originalImage):
 			min_variance = weighted_variance
 			min_threshold = i
 
-	print(min_threshold)
-
 	extract_foreground(grayImage, originalImage, min_threshold)
-
-
-
 
 
 
@@ -98,7 +123,3 @@ if __name__ == '__main__':
 	originalImage = cv2.imread(image_name) # original image is assumed to be colored
 
 	otsu(copy.deepcopy(originalImage))
-
-	# cv2.imshow('gray', grayImage)
-	# cv2.waitKey()
-	# cv2.destroyAllWindows()
