@@ -41,6 +41,7 @@ def calculate_variance(frequency, start, end):
 		variance /= count
 	return (count, variance)
 
+
 def apply_assumtion1(grayImage, min_threshold):
 	'''
 	'''
@@ -68,7 +69,6 @@ def apply_assumtion1(grayImage, min_threshold):
 		return "left"
 
 	return "right"
-
 
 
 def apply_assumption2(grayImage, min_threshold):
