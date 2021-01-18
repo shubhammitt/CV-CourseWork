@@ -27,36 +27,41 @@ def get_BW_image(originalImage, is_image_bw):
 
 def is_valid_move(x, y, rows, cols):
 	'''
-	check validity of cell inside matrix
+	check validity of cell whether it is inside matrix or not
 	'''
 	return x < rows and y < cols and x >= 0 and y >= 0
 
 
 def color_the_component(row, col, color, bw_image):
 	'''
-	color the given component with color
+	color the given component with color using BFS
 	'''
 	rows, cols = len(bw_image), len(bw_image[0])
-	q = Queue()
-	q.put((row, col))
-	bw_image[row][col] = color
 
-	moves = [(0, 1), (1, 0), (-1, 0), (0, -1)]
+	q = Queue()
+
+	q.put((row, col))
+	bw_image[row][col] = color # color current pixel
+
+	moves = [(0, 1), (1, 0), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)] # 8 possible nearby pixels
 
 	while q.qsize() != 0:
+
 		x1, y1 = q.get()
 
+		# check nearby pixels
 		for move in moves:
 			x2, y2 = x1 + move[0], y1 + move[1]
 
 			if is_valid_move(x2, y2, rows, cols) and (bw_image[x2][y2] == object_color):
-				q.put((x2, y2))
-				bw_image[x2][y2] = color
+				# nearby pixel is valid and is of white color then color that nearby pixel
+				q.put((x2, y2)) # keep nearby pixels in the queue for further recursive coloring
+				bw_image[x2][y2] = color # color nearby pixel
 
 
 def count_connected_components(bw_image):
 	rows, cols = bw_image.shape
-	bw_image = bw_image.tolist()
+	bw_image = bw_image.tolist() # numpy matrix to normal list of lists 
 
 	color = 0
 
@@ -83,7 +88,7 @@ if __name__ == "__main__":
 	is_image_bw = sys.argv[2]
 
 	originalImage = cv2.imread(image_name)
-	bw_image = get_BW_image(originalImage, is_image_bw)
+	bw_image = get_BW_image(originalImage, is_image_bw) # convert color to BW image
 
 	# apply algo
 	count_connected_components(copy.deepcopy(bw_image))
