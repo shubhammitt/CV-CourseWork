@@ -69,10 +69,10 @@ def subtract_background_from_frames(background_frame):
 		cv2.imwrite(path_intermediate_frames + str(i) + image_extension, intermediate_frame)
 
 
-def apply_otsu_on_each_frame():
+def apply_otsu_on_each_frame(min_threshold):
 	i = 0
 	for original_frame, intermediate_frame in zip(extracted_frames, intermediate_frames):
-		foreground_frame = otsu(original_frame, intermediate_frame, 2)
+		foreground_frame = otsu(original_frame, intermediate_frame, 2, min_threshold)
 		cv2.imwrite(path_output_frames + str(i) + image_extension, foreground_frame)
 		height, width, layers = foreground_frame.shape
 		size = ( width, height)
@@ -90,24 +90,28 @@ def convert_frames_to_video(size):
 	cv2.destroyAllWindows()
 
 
-def main(video_name, background_strategy):
+def main(video_name, background_strategy, min_threshold):
 	extract_frames(video_name)
 	background_frame = get_background_frame(background_strategy)
 	subtract_background_from_frames(copy.deepcopy(background_frame))
-	size = apply_otsu_on_each_frame()
+	size = apply_otsu_on_each_frame(min_threshold)
 	convert_frames_to_video(size)
-
-
 
 
 
 if __name__ == '__main__':
 
-	if len(sys.argv) != 3:
-		print("Usage: python3 code.py <path_of_video> <background_strategy>\n")
-		print("background_strategy = mean/median/mode")
+	if len(sys.argv) != 4:
+		print("Usage: python3 code.py <path_of_video> <background_strategy> <min_threshold>\n")
+		print("background_strategy = mean/median/mode\n")
+		print("min_threshold should be <0 to use otsu\n")
 		exit(0)
 
 	video_name = sys.argv[1]
 	background_strategy = sys.argv[2]
-	main(video_name, background_strategy)
+	min_threshold = int(sys.argv[3])
+
+	if min_threshold < 0 :
+		min_threshold = None
+
+	main(video_name, background_strategy, min_threshold)

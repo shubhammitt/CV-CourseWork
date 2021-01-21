@@ -141,10 +141,14 @@ def extract_foreground(grayImage, originalImage, min_threshold, assumption):
 	return originalImage
 
 
-def otsu(originalImage, grayImage, assumption):
+def otsu(originalImage, grayImage, assumption, min_threshold=None):
 	'''
 	Apply Otsu Algorithm on given Image
 	'''
+
+	if min_threshold is not None:
+		return extract_foreground(grayImage, originalImage, min_threshold, assumption)
+
 	frequency = get_frequency_distribution(grayImage) # a mapping of pixel values with their frequency in the grayImage of original Inamge
 	
 	min_threshold = 0
@@ -159,6 +163,6 @@ def otsu(originalImage, grayImage, assumption):
 			min_variance = weighted_variance
 			min_threshold = i
 
-
-	# print("Minimum Threshold =", min_threshold)
+			
+	print("Minimum Threshold =", min_threshold)
 	return extract_foreground(grayImage, originalImage, min_threshold, assumption)
