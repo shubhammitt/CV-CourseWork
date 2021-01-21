@@ -14,6 +14,7 @@ from otsu import *
 
 
 number_of_frames = 0
+FPS = 0
 path_input_frames = './input/'
 path_intermediate_frames = './intermediate/'
 path_output_frames = './output/'
@@ -24,9 +25,10 @@ foreground_frames = []
 
 
 def extract_frames(video_name):
-	global number_of_frames
+	global number_of_frames, FPS
 
 	vidcap = cv2.VideoCapture(video_name)
+	FPS = vidcap.get(cv2.CAP_PROP_FPS)
 	success, image = vidcap.read()
 
 	while success:
@@ -73,7 +75,7 @@ def apply_otsu_on_each_frame():
 		foreground_frame = otsu(original_frame, intermediate_frame, 2)
 		cv2.imwrite(path_output_frames + str(i) + image_extension, foreground_frame)
 		height, width, layers = foreground_frame.shape
-		size = (height, width)
+		size = ( width, height)
 		foreground_frames.append(foreground_frame)
 		i += 1
 	return size
@@ -81,7 +83,7 @@ def apply_otsu_on_each_frame():
 
 def convert_frames_to_video(size):
 	# convert frames to video
-	out = cv2.VideoWriter('1yo.avi', cv2.VideoWriter_fourcc(*'MJPG'), 20, size, True)
+	out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*"MJPG"), FPS, size)
 	for frame in foreground_frames:
 		out.write(frame)
 	out.release()
@@ -93,7 +95,7 @@ def main(video_name, background_strategy):
 	background_frame = get_background_frame(background_strategy)
 	subtract_background_from_frames(copy.deepcopy(background_frame))
 	size = apply_otsu_on_each_frame()
-	# convert_frames_to_video(size)
+	convert_frames_to_video(size)
 
 
 
