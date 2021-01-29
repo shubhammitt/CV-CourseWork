@@ -57,9 +57,9 @@ def get_background_frame(background_strategy):
 
 	background_frame = background_frame.astype(np.uint8) # float values to int
 
-	# cv2.imshow('Background frame', background_frame)
-	# cv2.waitKey()
-	# cv2.destroyAllWindows()
+	cv2.imshow('Background frame', background_frame)
+	cv2.waitKey()
+	cv2.destroyAllWindows()
 	return background_frame
 
 
