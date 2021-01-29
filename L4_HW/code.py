@@ -21,7 +21,7 @@ def find_stats(matrix):
 	'''
 	mean = matrix.mean()
 	std = matrix.std()
-	return [mean, std]
+	return [int(mean), int(std)]
 
 
 def find_features_per_part(extracted_parts_of_image):
