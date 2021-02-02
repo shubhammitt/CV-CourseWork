@@ -4,7 +4,6 @@ import copy
 import numpy as np
 import itertools
 
-
 def concatenate_histograms(feature_vectors):
 	'''
 	Convert nested list to single list
@@ -14,7 +13,7 @@ def concatenate_histograms(feature_vectors):
 
 
 def parity(a, b):
-	if a > b :
+	if a >= b :
 		return 1
 	return 0
 
@@ -23,30 +22,22 @@ def find_histogram_of_patch(extracted_patches_of_image):
 	histograms = []
 
 	for patch in extracted_patches_of_image:
-
-		# pad boundary of patch with 0
-		patch = np.pad(patch, pad_width=1, mode='constant', constant_values=0) 
-		height, width = patch.shape
-
 		frequency = [0] * 256
 
-		for i in range(1, height - 1):
-			for j in range(1, width - 1):
+		for i in range(patch.shape[0]):
+			for j in range(patch.shape[1]):
+				# patch[i][j] --> concerned pixel
 
 				decimal = 0
-				L = [
-					 parity(patch[i - 1][j - 1], patch[i][j]),
-					 parity(patch[i - 1][j], patch[i][j]),
-					 parity(patch[i - 1][j + 1], patch[i][j]),
-					 parity(patch[i][j + 1], patch[i][j]),
-					 parity(patch[i + 1][j + 1], patch[i][j]),
-					 parity(patch[i + 1][j], patch[i][j]),
-					 parity(patch[i + 1][j - 1], patch[i][j]),
-					 parity(patch[i][j - 1], patch[i][j])
-					]
+				directions = [(-1, -1), (-1, 0), (-1, 1), (0 , 1), (1, 1), (1, 0), (1, -1), (0, -1)]
 
-				for i in L:
-					decimal = 2 * decimal + i
+				for x, y in directions:
+					try:
+						z = parity(patch[i + x, j + y], patch[i][j])
+					except:
+						# this will excecute when concerned pixel is at boundary of patch
+						z = parity(0, patch[i][j])
+					decimal = 2 * decimal + z
 
 				frequency[decimal] += 1
 				
@@ -77,9 +68,6 @@ def divide_image_in_patches(grayImage):
 				y1 = vertical_length * j
 				patch = take_out_patch(grayImage, x1, y1, horizontal_length, vertical_length)
 				extracted_patches_of_image.append(patch)
-				# cv2.imshow('patch', patch)
-				# cv2.waitKey()
-				# cv2.destroyAllWindows()
 
 	return extracted_patches_of_image
 
