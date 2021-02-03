@@ -86,11 +86,9 @@ def main(image_path):
 	bw_image = color_to_BW(originalImage) # convert color to BW image
 	diameters_coordinates = find_diameter_cors_connected_components(bw_image)
 
-	contours,hierarchy = cv2.findContours(bw_image, 4, 5)
-
-	# Actual
+	# Actual bounding circle
 	# img = originalImage
-
+	# contours,hierarchy = cv2.findContours(bw_image, 4, 5)
 	# for i in range(len(contours)):
 	# 	cnt = contours[i]
 	# 	(x,y),radius = cv2.minEnclosingCircle(cnt)
@@ -100,15 +98,13 @@ def main(image_path):
 	# cv2.imshow('Black white image', img)
 	# cv2.waitKey()
 
-
-
 	for i in diameters_coordinates:
 		x1, y1, x2, y2, x, y = diameters_coordinates[i]
 		center = ((x1 + x2) // 2, (y1 + y2) // 2)
-		radius = int(((max([((p - center[0])** 2 + (q- center[1]) ** 2) for p,q in zip(x, y)]))**0.5))
-		originalImage = cv2.circle(originalImage, center, radius, (0,0,255), 2)
+		radius = int(((max([((p - center[0])** 2 + (q- center[1]) ** 2) for p, q in zip(x, y)]))**0.5))
+		originalImage = cv2.circle(originalImage, center, radius, (0, 0, 255), 2)
 
-	cv2.imshow('Black white image', originalImage)
+	cv2.imshow('Ojects detected', originalImage)
 	cv2.waitKey()
 	cv2.destroyAllWindows()
 
