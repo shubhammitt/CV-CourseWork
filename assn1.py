@@ -34,7 +34,7 @@ def color_the_component(row, col, color, bw_image):
 	rows, cols = len(bw_image), len(bw_image[0])
 	x_min, y_min = col, row
 	x_max, y_max = col, row
-	x_y = set([(col, row)])
+	edge_x_y = set([(col, row)])
 
 	q = Queue()
 
@@ -42,6 +42,7 @@ def color_the_component(row, col, color, bw_image):
 	bw_image[row][col] = color # color current pixel
 
 	moves = [(0, 1), (1, 0), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)] # 8 possible nearby pixels
+	
 	while q.qsize() != 0:
 
 		x1, y1 = q.get()
@@ -52,29 +53,30 @@ def color_the_component(row, col, color, bw_image):
 
 			if is_valid_move(x2, y2, rows, cols) and (bw_image[x2][y2] == object_color):
 				# nearby pixel is valid and is of white color then color that nearby pixel
+				
 				q.put((x2, y2)) # keep nearby pixels in the queue for further recursive coloring
+				bw_image[x2][y2] = color # color nearby pixel
 				
 				x_min = min(x_min, y2)
 				x_max = max(x_max, y2)
 				y_min = min(y_min, x2)
 				y_max = max(y_max, x2)
-				bw_image[x2][y2] = color # color nearby pixel
 
 				for _move in moves:
 					x3, y3 = x2 + _move[0], y2 + _move[1]
-					if (is_valid_move(x3, y3, rows, cols)) and bw_image[x3][y3] == background_color:
-						x_y.add((y2, x2))
+					if not (is_valid_move(x3, y3, rows, cols)) or bw_image[x3][y3] == background_color:
+						edge_x_y.add((y2, x2))
 
 	center = ((x_min + x_max) // 2, (y_min + y_max) // 2)
 	perimeter_x, perimeter_y = 0, 0
-	search_length = 4
+	search_length = 5
 	min_radius = 0
 
 	for center_x in range(max(0, center[0] - search_length), min(cols, center[0] + search_length)):
 		for center_y in range(max(0, center[1] - search_length), min(rows, center[1] + search_length)):
 			max_radius = 0
 			local_perimeter_x, local_perimeter_y = 0, 0
-			for x, y in x_y:
+			for x, y in edge_x_y:
 				r = (x - center_x)**2 + (y - center_y)**2
 				if r > max_radius:
 					max_radius = r
