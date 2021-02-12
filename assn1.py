@@ -8,7 +8,7 @@ black = 0
 object_color = white
 background_color = black
 bounding_circle_info = {}
-search_length = 1
+search_length = 5
 
 
 def color_to_BW(color_image, threshold=127):
@@ -129,12 +129,13 @@ def find_connected_components(bw_image):
 				color_the_component(row, col, color, bw_image)
 
 
-def make_bounding_circle(originalImage):
+def make_bounding_circle(originalImage, bw_image):
 	for i in bounding_circle_info:
 		center, farthest_point, radius = bounding_circle_info[i]
 		# ignore too small objects
 		if radius > 5:
-			print("Center =", center, "Radius =", radius)
+			jaccard_similarity = find_jaccard_similarity(bw_image, center, radius)
+			print("Center =", center, "\tRadius =", radius, "\tJaccard Similarity =", jaccard_similarity)
 			
 			originalImage = cv2.circle(originalImage, center, radius, (0, 0, 255), 2) # draw circle
 			cv2.putText(originalImage, str(center), center, cv2.FONT_HERSHEY_PLAIN, 1.2, (88, 12, 255), 2) # put cordinates of center
@@ -145,6 +146,27 @@ def make_bounding_circle(originalImage):
 	cv2.destroyAllWindows()
 
 
+def find_jaccard_similarity(bw_image, center, radius):
+	white_pixels = black_pixels = 0
+	sq_radius = radius ** 2
+	rows, cols = bw_image.shape
+
+	for x in range(max(0, center[1] - radius), min(rows, center[1] + radius)):
+		for y in range(max(0, center[0] - radius), min(cols, center[0] + radius)):
+			distance_from_center = (y- center[0])**2 + (x - center[1])**2
+			# print(distance_from_center, sq_radius)
+			if distance_from_center <= sq_radius:
+				if bw_image[x][y] == background_color:
+					black_pixels += 1
+				else:
+					white_pixels += 1
+
+	return white_pixels / (black_pixels + white_pixels)
+			
+
+
+
+
 def main(image_path, _search_length=1):
 	global search_length
 	search_length = _search_length
@@ -152,8 +174,8 @@ def main(image_path, _search_length=1):
 	originalImage = cv2.imread(image_path)
 	bw_image = color_to_BW(originalImage) # convert color to BW image
 	find_connected_components(bw_image)
-	make_bounding_circle(originalImage)
-	
+	make_bounding_circle(originalImage, bw_image)
+
 
 
 if __name__ == "__main__":
