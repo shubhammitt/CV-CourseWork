@@ -86,26 +86,31 @@ def find_bounding_circle_info(x_min, x_max, y_min, y_max, border_x_y, rows, cols
 	This will find center, farthest point from center and radius 
 	and store it in bounding_circle_info with its corresponding color
 	'''
-	center = ((x_min + x_max) // 2, (y_min + y_max) // 2)
-	perimeter_x, perimeter_y = 0, 0
-	min_radius = 0
+	center = ((x_min + x_max) >> 1, (y_min + y_max) >> 1)
+	farthest_point = (0, 0)
+	min_radius = 10**18
 
 	for center_x in range(max(0, center[0] - search_length), min(cols, center[0] + search_length)):
 		for center_y in range(max(0, center[1] - search_length), min(rows, center[1] + search_length)):
+			
 			max_radius = 0
-			local_perimeter_x, local_perimeter_y = 0, 0
+			local_farthest_point = (0, 0)
 			for x, y in border_x_y:
-				r = (x - center_x)**2 + (y - center_y)**2
+				r = (x - center_x) ** 2 + (y - center_y) ** 2
+
 				if r > max_radius:
 					max_radius = r
-					local_perimeter_x, local_perimeter_y = x, y
+					local_farthest_point = (x, y)
 
-			if min_radius == 0 or min_radius > max_radius:
+					if max_radius >= min_radius:
+						break
+
+			if min_radius > max_radius:
 				min_radius = max_radius
-				perimeter_x, perimeter_y = local_perimeter_x, local_perimeter_y
+				farthest_point = local_farthest_point
 				center = (center_x, center_y)
 
-	bounding_circle_info[abs(color)] = (center, (perimeter_x, perimeter_y), ceil(min_radius**0.5))
+	bounding_circle_info[abs(color)] = (center, farthest_point, ceil(min_radius**0.5))
 
 
 def find_connected_components(bw_image):
@@ -124,6 +129,22 @@ def find_connected_components(bw_image):
 				color_the_component(row, col, color, bw_image)
 
 
+def make_bounding_circle(originalImage):
+	for i in bounding_circle_info:
+		center, farthest_point, radius = bounding_circle_info[i]
+		# ignore too small objects
+		if radius > 5:
+			print("Center =", center, "Radius =", radius)
+			
+			originalImage = cv2.circle(originalImage, center, radius, (0, 0, 255), 2) # draw circle
+			cv2.putText(originalImage, str(center), center, cv2.FONT_HERSHEY_PLAIN, 1.2, (88, 12, 255), 2) # put cordinates of center
+			cv2.line(originalImage ,center, farthest_point, (211, 2, 252), 2) # make a line from center to farthest point
+
+	cv2.imshow('Ojects detected', originalImage)
+	cv2.waitKey()
+	cv2.destroyAllWindows()
+
+
 def main(image_path, _search_length=1):
 	global search_length
 	search_length = _search_length
@@ -131,19 +152,8 @@ def main(image_path, _search_length=1):
 	originalImage = cv2.imread(image_path)
 	bw_image = color_to_BW(originalImage) # convert color to BW image
 	find_connected_components(bw_image)
+	make_bounding_circle(originalImage)
 	
-	for i in bounding_circle_info:
-		center, farthest_point, radius = bounding_circle_info[i]
-		print("Center =", center, "Radius =", radius)
-		
-		originalImage = cv2.circle(originalImage, center, radius, (0, 0, 255), 1) # draw circle
-		cv2.putText(originalImage, str(center), center, cv2.FONT_HERSHEY_PLAIN, 1.2, (88, 12, 255), 2) # put cordinates of center
-		# cv2.line(originalImage ,center, farthest_point, (211, 2, 252), 2) # make a line from center to farthest point
-
-	cv2.imshow('Ojects detected', originalImage)
-	cv2.waitKey()
-	cv2.destroyAllWindows()
-
 
 
 if __name__ == "__main__":
