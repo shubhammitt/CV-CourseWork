@@ -39,7 +39,7 @@ def color_the_component(row, col, color, bw_image):
 	x_max, y_max = col, row
 	# store all coordinates which are at perimeter of current object
 	border_x_y = set([(col, row)]) 
-
+	num_pixels_in_object = 1
 	q = Queue()
 
 	q.put((row, col))
@@ -64,6 +64,7 @@ def color_the_component(row, col, color, bw_image):
 				
 				q.put((x2, y2)) # keep nearby pixels in the queue for further recursive coloring
 				bw_image[x2][y2] = color # color nearby pixel
+				num_pixels_in_object += 1
 				
 
 				# find whether (x2, y2) are at perimeter of current object
@@ -78,12 +79,12 @@ def color_the_component(row, col, color, bw_image):
 						y_max = max(y_max, x2)
 						break
 
-	find_bounding_circle_info(x_min, x_max, y_min, y_max, border_x_y, rows, cols, color)
+	find_bounding_circle_info(x_min, x_max, y_min, y_max, border_x_y, rows, cols, color, num_pixels_in_object)
 
 
-def find_bounding_circle_info(x_min, x_max, y_min, y_max, border_x_y, rows, cols, color):
+def find_bounding_circle_info(x_min, x_max, y_min, y_max, border_x_y, rows, cols, color, num_pixels_in_object):
 	'''
-	This will find center, farthest point from center and radius 
+	This will find center, farthest point from center and radius of circle 
 	and store it in bounding_circle_info with its corresponding color
 	'''
 	center = ((x_min + x_max) >> 1, (y_min + y_max) >> 1)
@@ -93,6 +94,7 @@ def find_bounding_circle_info(x_min, x_max, y_min, y_max, border_x_y, rows, cols
 	for center_x in range(max(0, center[0] - search_length), min(cols, center[0] + search_length)):
 		for center_y in range(max(0, center[1] - search_length), min(rows, center[1] + search_length)):
 			
+			# find radius (center_x, center_y) are assumed to be center of bounding circle
 			max_radius = 0
 			local_farthest_point = (0, 0)
 			for x, y in border_x_y:
@@ -110,7 +112,7 @@ def find_bounding_circle_info(x_min, x_max, y_min, y_max, border_x_y, rows, cols
 				farthest_point = local_farthest_point
 				center = (center_x, center_y)
 
-	bounding_circle_info[abs(color)] = (center, farthest_point, ceil(min_radius**0.5))
+	bounding_circle_info[abs(color)] = (center, farthest_point, ceil(min_radius**0.5), num_pixels_in_object)
 
 
 def find_connected_components(bw_image):
@@ -131,41 +133,34 @@ def find_connected_components(bw_image):
 
 def make_bounding_circle(originalImage, bw_image):
 	for i in bounding_circle_info:
-		center, farthest_point, radius = bounding_circle_info[i]
+		center, farthest_point, radius, num_pixels_in_object = bounding_circle_info[i]
 		# ignore too small objects
-		if radius > 5:
-			jaccard_similarity = find_jaccard_similarity(bw_image, center, radius)
+		if radius > 10:
+			jaccard_similarity = find_jaccard_similarity(bw_image, center, radius, num_pixels_in_object)
 			print("Center =", center, "\tRadius =", radius, "\tJaccard Similarity =", jaccard_similarity)
 			
-			originalImage = cv2.circle(originalImage, center, radius, (0, 0, 255), 2) # draw circle
-			cv2.putText(originalImage, str(center), center, cv2.FONT_HERSHEY_PLAIN, 1.2, (88, 12, 255), 2) # put cordinates of center
-			cv2.line(originalImage ,center, farthest_point, (211, 2, 252), 2) # make a line from center to farthest point
+			originalImage = cv2.circle(originalImage, center, radius, (0, 255, 1), 2) # draw circle
+			cv2.putText(originalImage, str(center), center, cv2.FONT_HERSHEY_PLAIN, 1.2, (0, 12, 255), 2) # put cordinates of center
+			cv2.line(originalImage ,center, farthest_point, (255, 21, 25), 2) # make a line from center to farthest point
 
 	cv2.imshow('Ojects detected', originalImage)
 	cv2.waitKey()
 	cv2.destroyAllWindows()
 
 
-def find_jaccard_similarity(bw_image, center, radius):
-	white_pixels = black_pixels = 0
+def find_jaccard_similarity(bw_image, center, radius, white_pixels):
+	num_pixels_in_circle = 0
 	sq_radius = radius ** 2
 	rows, cols = bw_image.shape
 
 	for x in range(max(0, center[1] - radius), min(rows, center[1] + radius)):
 		for y in range(max(0, center[0] - radius), min(cols, center[0] + radius)):
 			distance_from_center = (y- center[0])**2 + (x - center[1])**2
-			# print(distance_from_center, sq_radius)
 			if distance_from_center <= sq_radius:
-				if bw_image[x][y] == background_color:
-					black_pixels += 1
-				else:
-					white_pixels += 1
+				num_pixels_in_circle += 1
 
-	return white_pixels / (black_pixels + white_pixels)
+	return white_pixels / num_pixels_in_circle
 			
-
-
-
 
 def main(image_path, _search_length=1):
 	global search_length
@@ -185,7 +180,7 @@ if __name__ == "__main__":
 		print("\nsearch_length : a positive integer")
 		print("\t\thigher its value --> higher accuracy of center of bounding circle")
 		print("\t\tat the same time, execution time also increases")
-		print("\t\t5 is usually found to be good estimate with execution time less than 1 second")
+		print("\t\t5 is usually found to be good estimate with execution time less than 2 seconds")
 		exit(1)
 
 	image_path = sys.argv[1]
