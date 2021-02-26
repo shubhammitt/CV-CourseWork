@@ -8,16 +8,8 @@ import matplotlib.pyplot as plt
 
 
 def slic(originalImage):
-	slic = cv2.ximgproc.createSuperpixelSLIC(originalImage ,region_size=16,ruler = 20.0) 
-	slic.iterate(100)     #Number of iterations, the greater the better
-	mask_slic = slic.getLabelContourMask() #Get Mask, Super pixel edge Mask==1
-	label_slic = slic.getLabels()        #Get superpixel tags
-	number_slic = slic.getNumberOfSuperpixels()  #Get the number of super pixels
-	mask_inv_slic = cv2.bitwise_not(mask_slic)  
-	img_slic = cv2.bitwise_and(originalImage, originalImage, mask =  mask_inv_slic) #Draw the superpixel boundary on the original image
-	# cv2.imshow("img_slic",img_slic)
-	# cv2.waitKey(0)
-	# cv2.destroyAllWindows()
+	slic = cv2.ximgproc.createSuperpixelSLIC(originalImage ,region_size=20, ruler = 12.0) 
+	slic.iterate(20)     #Number of iterations, the greater the better
 	return slic
 
 def find_cluster_centers(slic_img, originalImage):
@@ -40,7 +32,6 @@ def find_cluster_centers(slic_img, originalImage):
 		for j in range(5):
 			cluster_centers[i][j] /= cluster_centers[i][5]
 		cluster_centers[i] = cluster_centers[i][:5]
-	# print(cluster_centers)
 	return cluster_centers
 
 def calculate_saliency(cluster_centers, slic_img, originalImage):
@@ -53,19 +44,22 @@ def calculate_saliency(cluster_centers, slic_img, originalImage):
 	for i in range(num_superpixel):
 		for j in range(num_superpixel):
 			sum_color_distance = 0
-			for k in range(3):
-				sum_color_distance += (cluster_centers[i][k] - cluster_centers[j][k])**2
+			for k in range(channel):
+				sum_color_distance += ((cluster_centers[i][k] - cluster_centers[j][k])**2)
 			sum_color_distance = sum_color_distance**0.5
 
 			spatial_distance = 0
 
 			for k in range(3, 5):
 				spatial_distance += (cluster_centers[i][k] - cluster_centers[j][k])**2
-			spatial_distance = sum_color_distance**0.5
+			spatial_distance = spatial_distance**0.5
 
-			saliency[i] = (sum_color_distance / max_color_diff) * math.exp(-(spatial_distance / diagonal))
+			saliency[i] += (sum_color_distance / max_color_diff) * math.exp(-(spatial_distance / diagonal))
 
-	print(saliency)
+	# print(saliency)
+	max_sal = max(saliency)
+	for i in range(num_superpixel):
+		saliency[i] = saliency[i] / max_sal
 	return saliency
 
 def map_saliency(slic_img, originalImage, saliency):
@@ -77,7 +71,7 @@ def map_saliency(slic_img, originalImage, saliency):
 		for j in range(width):
 			image[i][j] = saliency[labels[i][j]]
 	image=np.float32(image)
-	print(image)
+	# print(image)
 	cv2.imshow('saliency', image)
 	cv2.waitKey()
 	cv2.destroyAllWindows()
