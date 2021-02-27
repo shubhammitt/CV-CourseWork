@@ -7,6 +7,7 @@ import time
 from multiprocessing import Pool
 
 rgb_frequency = {}
+pixel_frequency = []
 saliency = {}
 
 num_pixels = 0
@@ -14,9 +15,8 @@ num_pixels = 0
 def process_pixel(pixel1):
 	pixel1_b, pixel1_g, pixel1_r = map(int, pixel1.split())
 	chebyshev_distance = 0		
-	for pixel2, frequency2 in rgb_frequency.items():
-		pixel2_b, pixel2_g, pixel2_r = map(int, pixel2.split())
-		chebyshev_distance += frequency2 * max(abs(pixel1_r - pixel2_r), abs(pixel1_b - pixel2_b), abs(pixel1_g - pixel2_g))
+	for i in pixel_frequency:
+		chebyshev_distance += i[-1] * max(abs(pixel1_r - i[2]), abs(pixel1_b - i[0]), abs(pixel1_g - i[1]))
 
 	return (pixel1, chebyshev_distance)
 		
@@ -42,16 +42,16 @@ def map_saliency(originalImage, saliency):
 			image[i][j] = saliency[str(originalImage[i][j][0]) + " " + str(originalImage[i][j][1]) + " " + str(originalImage[i][j][2])]
 	
 	image=np.float64(image)
-	# cv2.imshow('saliency', image)
-	# cv2.waitKey()
-	# cv2.destroyAllWindows()
+	cv2.imshow('saliency', image)
+	cv2.waitKey()
+	cv2.destroyAllWindows()
 
 
 def find_rgb_frequency(originalImage):
 	global rgb_frequency, num_pixels
 	height, width = originalImage.shape[:2]
 	num_pixels = height * width
-	rgb_frequency = {}
+
 	for i in range(height):
 		for j in range(width):
 			pixel = str(originalImage[i][j][0]) + " " + str(originalImage[i][j][1]) + " " + str(originalImage[i][j][2])
@@ -60,12 +60,16 @@ def find_rgb_frequency(originalImage):
 			except:
 				rgb_frequency[pixel] = 1
 
+	for i, j in rgb_frequency.items():
+		b, g, r = map(int, i.split())
+		pixel_frequency.append((b, g, r, j))
+
 	return rgb_frequency
 
 
 def main(image_path):
 	originalImage = cv2.imread(image_path)
-	# originalImage = cv2.resize(originalImage, (100, 100))
+	# originalImage = cv2.resize(originalImage, (200, 200))
 	rgb_frequency = find_rgb_frequency(originalImage)
 	saliency = calculate_saliency(rgb_frequency, originalImage)
 	map_saliency(originalImage, saliency)
@@ -79,4 +83,3 @@ if __name__ == '__main__':
 
 	image_path = sys.argv[1]
 	main(image_path)
-	
