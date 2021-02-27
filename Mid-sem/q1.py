@@ -106,6 +106,8 @@ def extract_foreground(grayImage, originalImage, min_threshold):
 def otsu(grayImage, originalImage):
 	'''
 	Apply Otsu Algorithm on given Image
+	Class 1: [0, minthreshold)
+	Class 2: [minthreashold, 256]
 	'''
 
 	frequency = get_frequency_distribution(grayImage) # a mapping of pixel values with their frequency in the grayImage of original Inamge
