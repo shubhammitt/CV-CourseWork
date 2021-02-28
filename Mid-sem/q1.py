@@ -1,50 +1,11 @@
-# Otsu's algorithm
+# Otsu's algorithm for TSS
 
 '''
-Asssumptions:
-1) Object will be present at the center of the image.
-2) Boundary pixels are likely to be the background.
+Asssumptions: Object will be present at the center of the image.
 '''
 
 import cv2
 import sys
-import copy
-
-
-def get_frequency_distribution(grayImage):
-	'''
-	returns a mapping of pixel values with their frequency in the grayImage of original Inamge
-	'''
-	rows, cols = grayImage.shape
-
-	frequency = [0] * 256 # index denotes the pixel values so frequency[i] denotes the count of pixels of value i in the grayImage
-
-	for row in range(rows):
-		for col in range(cols):
-			frequency[grayImage[row][col]] += 1
-
-	return frequency
-
-
-def calculate_tss(frequency, start, end):
-	'''
-	'end' not inclusive in the range
-	'''
-	mean = 0
-	count = 0 # number of pixel in given range
-
-	for i in range(start, end):
-		mean += frequency[i] * i
-		count += frequency[i]
-
-	if count != 0:
-		mean /= count
-
-	tss = 0
-	for i in range(start, end):
-		tss += frequency[i] * ((mean - i)**2)
-
-	return tss
 
 
 def apply_assumption(grayImage, min_threshold):
@@ -87,6 +48,9 @@ def apply_assumption(grayImage, min_threshold):
 
 
 def extract_foreground(grayImage, originalImage, min_threshold):
+	'''
+	This will make the background of blue color according to optimal threshhold returned by otse
+	'''
 	rows, cols = grayImage.shape
 	
 	background_side = apply_assumption(grayImage, min_threshold)
@@ -98,9 +62,45 @@ def extract_foreground(grayImage, originalImage, min_threshold):
 				originalImage[row][col][1] = 0 # green
 				originalImage[row][col][2] = 0 # red
 
-	cv2.imshow('gray', originalImage)
+	cv2.imshow('Otsu\'s Output', originalImage)
 	cv2.waitKey()
 	cv2.destroyAllWindows()
+
+
+def get_frequency_distribution(grayImage):
+	'''
+	returns a mapping of pixel values with their frequency in the grayImage of original Inamge
+	'''
+	rows, cols = grayImage.shape
+
+	frequency = [0] * 256 # index denotes the pixel values so frequency[i] denotes the count of pixels of value i in the grayImage
+
+	for row in range(rows):
+		for col in range(cols):
+			frequency[grayImage[row][col]] += 1
+
+	return frequency
+
+
+def calculate_tss(frequency, start, end):
+	'''
+	'end' not inclusive in the range
+	'''
+	mean = 0
+	count = 0 # number of pixel in given range
+
+	for i in range(start, end):
+		mean += frequency[i] * i
+		count += frequency[i]
+
+	if count != 0:
+		mean /= count
+
+	tss = 0
+	for i in range(start, end):
+		tss += frequency[i] * ((mean - i)**2)
+
+	return tss
 
 
 def otsu(grayImage, originalImage):
@@ -123,24 +123,21 @@ def otsu(grayImage, originalImage):
 		if tss <= min_tss or i == 1:
 			min_tss = tss
 			min_threshold = i
-
-			
+		
 	print("Optimal Threshold =", min_threshold)
-	extract_foreground(grayImage, originalImage, min_threshold)
+	return min_threshold
 
 
 def main(image_name):
 	originalImage = cv2.imread(image_name)
 	grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
-	otsu(grayImage, originalImage)
+	min_threshold = otsu(grayImage, originalImage)
+	extract_foreground(grayImage, originalImage, min_threshold)
 
 
 if __name__ == "__main__":
 
 	if len(sys.argv) != 2:
-		'''
-		is_image_bw should be "1" if original image is already black and white
-		'''
 		print("Usage: python3 <script_name.py> <path_of_image>")
 		exit(1)
 

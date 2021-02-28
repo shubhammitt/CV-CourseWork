@@ -4,11 +4,11 @@ import copy
 import numpy as np
 import itertools
 
-def min_max_ratio_to_bin(a, b):
+def min_max_ratio_to_binary_num(a, b):
+	# to avoid NANs
 	a += 0.00001
 	b += 0.00001
 	return round(min(a, b) / max(a, b))
-
 
 def find_lbp_feature_map(grayImage):
 	height, width = grayImage.shape
@@ -17,13 +17,14 @@ def find_lbp_feature_map(grayImage):
 
 	for i in range(height):
 		for j in range(width):
+			# find decimal for every pixel grayImage[i][j]
 
 			decimal = 0
 			directions = [(-1, -1), (-1, 0), (-1, 1), (0 , 1), (1, 1), (1, 0), (1, -1), (0, -1)]
 
 			for x, y in directions:
 				try:
-					z = min_max_ratio_to_bin(grayImage[i + x, j + y], grayImage[i][j])
+					z = min_max_ratio_to_binary_num(grayImage[i + x, j + y], grayImage[i][j])
 				except:
 					# this will excecute when concerned pixel is at boundary of patch
 					z = 1
@@ -31,22 +32,17 @@ def find_lbp_feature_map(grayImage):
 
 			image[i][j] = decimal
 
-	cv2.imshow('lbp', image)
-	cv2.waitKey()
-	cv2.destroyAllWindows()
-
-				
-	
+	return image
 
 def main(image_path):
-
 	originalImage = cv2.imread(image_path)
 	grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
 
-	find_lbp_feature_map(grayImage)
+	final_image = find_lbp_feature_map(grayImage)
 	
-
-
+	cv2.imshow('lbp', final_image)
+	cv2.waitKey()
+	cv2.destroyAllWindows()
 
 if __name__ == '__main__':
 	if len(sys.argv) != 2:
