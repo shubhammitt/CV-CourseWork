@@ -116,7 +116,7 @@ def spatial_cue(num_clusters, label, center, superpixel_centers_xy):
 def map_cue_to_image(cue, num_clusters, originalImage, superpixel_labels, cluster_labels):
 	# normalise cue
 	max_cue = max(cue)
-	cue = [i / max_cue for i in cue]
+	cue = [int((i / max_cue) * 255) for i in cue]
 	superpixels_to_cue = {}
 	image = [[0] * originalImage.shape[1] for _ in range(originalImage.shape[0])]
 
@@ -127,7 +127,7 @@ def map_cue_to_image(cue, num_clusters, originalImage, superpixel_labels, cluste
 		for j in range(originalImage.shape[1]):
 			image[i][j] = np.float(superpixels_to_cue[superpixel_labels[i][j]])
 
-	image=np.float32(image)
+	image = np.uint8(image)
 	cv2.imshow('cue image', image)
 	cv2.waitKey()
 	cv2.destroyAllWindows()
